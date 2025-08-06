@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  gpt-oss-api-server:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - GPT_OSS_API_URL=${GPT_OSS_API_URL:-http://localhost:8000}
+      - GPT_OSS_API_KEY=${GPT_OSS_API_KEY:-}
+      - HOST=0.0.0.0
+      - PORT=8080
+      - MAX_TOKENS=${MAX_TOKENS:-2048}
+      - TEMPERATURE=${TEMPERATURE:-0.7}
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
