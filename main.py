@@ -78,7 +78,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting GPT-OSS API Server...")
     http_client = httpx.AsyncClient(timeout=300.0)
     
-    # Test connection to GPT-OSS
+    # Test connection to GPT-OSS (skip for testing)
     try:
         response = await http_client.get(f"{config.GPT_OSS_API_URL}/health")
         if response.status_code == 200:
@@ -86,7 +86,8 @@ async def lifespan(app: FastAPI):
         else:
             logger.warning(f"GPT-OSS API health check failed: {response.status_code}")
     except Exception as e:
-        logger.error(f"Failed to connect to GPT-OSS API: {e}")
+        logger.warning(f"GPT-OSS API not available during startup: {e}")
+        logger.info("Server will start anyway - configure GPT_OSS_API_URL when ready")
     
     yield
     
@@ -269,6 +270,35 @@ async def test_connection(
             "status": "error",
             "message": f"Failed to connect to GPT-OSS API: {str(e)}"
         }
+
+@app.post("/mock-test")
+async def mock_test():
+    """Mock test endpoint that doesn't require GPT-OSS API"""
+    return {
+        "status": "success",
+        "message": "Server is running correctly",
+        "mock_response": {
+            "id": "chatcmpl-mock-123",
+            "object": "chat.completion",
+            "created": 1640995200,
+            "model": "gpt-oss-120b",
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": "Hello! This is a mock response from GPT-OSS 120B API Server. The server is working correctly!"
+                    },
+                    "finish_reason": "stop"
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 20,
+                "total_tokens": 30
+            }
+        }
+    }
 
 if __name__ == "__main__":
     logger.info(f"Starting server on {config.HOST}:{config.PORT}")
